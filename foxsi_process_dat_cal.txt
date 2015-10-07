@@ -1,0 +1,261 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+FUNCTION READ_DATA_STRUCT_CAL, FILE, SUBTRACT = SUBTRACT, STOP = STOP              
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ; reads in data from a file array, returns data in structure form.
+  ; this function is used by the main processing procedure.
+
+  n_files = n_elements(file)
+  restore, 'template_cal.sav'
+
+  bad_events = 0
+
+  ; prepare the type of data structure you want
+  data_struct = {foxsi_data, $
+                 asic:0, $          ; asic 0-3 (0:1 p-side, 2:3 n-side
+                 sync:0 $           ; sync word for next frame part
+                 time:0,  $         ; detector time
+                 start:0, $         ; start bit, should be 1
+                 chip_bit:0, $      ; was there data in the chip
+                 analog_trg:0, $    ; was there an analog trigger
+                 seu:0, $           ; was there an SEU
+                 mask:'0', $        ; channel mask
+                 common_mode:0, $   ; common mode noise
+                 cmn_median:0, $    ; common mode noise (calculated from data, median)
+                 cmn_average:0, $   ; common mode noise (calculated from data, average)
+                 data:intarr(64), $ ; strip data
+                 ped:0, $      ; dummy pedestal value
+;                 stop:0, $          ; stop bit, should be 1
+                }
+
+  ; loop through files
+  for j = 0, n_files-1 do begin
+
+    print, 'Reading file ', file[j]
+    raw_data = read_ascii(file[j], template = template)
+
+    ; to do: need a safety clause in case no data is found
+
+    ; make array of structures, one for each event.
+    n_evts = n_elements(raw_data.start_bit)
+    temp_struct = replicate(data_struct[0], n_evts)
+
+    ; populate event structure array with data.
+    ; this could probably be done more efficiently.
+
+    for i = long(0), n_evts-1 do begin
+
+      if (i mod 1000) eq 0 then print, 'Event ', i
+      temp_struct[i].asic = i mod 4
+
+      temp_struct[i].sync       = raw_data.sync_word[i]
+      temp_struct[i].time       = raw_data.time[i]
+      temp_struct[i].start      = raw_data.start_bit[i]
+      temp_struct[i].chip_bit   = raw_data.chip_data_bit[i]
+      temp_struct[i].analog_trg = raw_data.analog_trigger[i]
+      temp_struct[i].seu        = raw_data.seu[i]
+      temp_struct[i].mask       = raw_data.channel_mask[i]
+      temp_struct[i].common_mode= raw_data.common_mode[i]
+
+      
+      for k = 0, 63 do temp_struct[i].data[ch] = raw_data.adc[ch, i]
+      
+
+      temp_struct[i].ped        = raw_data.pedestal[i]
+
+;      temp_struct[i].stop       = raw_data.stop_bit[i]
+
+      temp_struct[i].common_mode_median= median(temp_struct[i].data)
+      temp_struct[i].common_mode_average= getcmn(temp_struct[i].data)
+
+;      if (i mod 1000) eq 0 then print, 'Channel mask ', temp_struct[i].mask
+
+      ; subtract common mode noise.
+      ; common mode is computed from data; alternative is to 
+      ; use the common mode value as determined by ASIC.
+      if keyword_set(subtract) then begin
+        common_mode = median(temp_struct[i].data)
+        temp_struct[i].data = temp_struct[i].data - common_mode
+      endif
+
+    endfor
+
+    ;
+    ; Here, bad frames of data are removed. This section looks for 
+    ; certain markers that should be present in a consistent frame
+    ; and eliminates that frame if the markers are not found.
+    ; Many other markers could be used here too.    ;
+    ;
+    good0 = where(temp_struct.mask eq '1ffffff ffffff ffffff ffffff' and $
+                  temp_struct.sync eq 185 and temp_struct.asic eq 0)
+    good1 = where(temp_struct.mask eq '3ffffff ffffff ffffff ffffff' and $
+                  temp_struct.sync eq 185 and temp_struct.asic eq 1)
+    good2 = where(temp_struct.mask eq '3ffffff ffffff ffffff ffffff' and $
+                  temp_struct.sync eq 185 and temp_struct.asic eq 2)
+    good3 = where(temp_struct.mask eq '3ffffff ffffff ffffff ffffff' and $
+                  temp_struct.sync eq 0   and temp_struct.asic eq 3)
+
+    bad3 = where( temp_struct[good3].data gt 1024 or temp_struct[good3].data lt 0 )
+    temp_struct[good3].data[bad3] = 0
+
+    good_events = [good0, good1, good2, good3]
+
+    print, 'Good events: '
+    print, '  asic0: ', n_elements(good0)
+    print, '  asic1: ', n_elements(good1)
+    print, '  asic2: ', n_elements(good2)
+    print, '  asic3: ', n_elements(good3)
+
+    data_struct = [data_struct, temp_struct[good_events]]
+
+    if keyword_set(stop) then stop
+
+    print, 'Finished processing ', file[j]
+
+  endfor
+
+  n = n_elements(data_struct)-1
+  data_struct = data_struct[1:n]
+
+  ; return array of events, one structure element per event.
+  return, data_struct
+
+END
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+PRO FOXSI_PROCESS_DATA, FILE, ASIC0, ASIC1, ASIC2, ASIC3, $
+                        SUBTRACT_COMMON = SUBTRACT_COMMON, STOP = STOP, $
+                        SAVEFILE = SAVEFILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+  if not keyword_set(savefile) then savefile = 'pedestal.sav'
+
+  ; call preceding function to read in the data file(s).
+  data = read_data_struct(file, subtract = subtract_common, stop = stop)
+  n_evts = n_elements(data)
+
+  print, n_evts, ' total events'
+
+  ; Split data up into ASICs. subtract common mode noise if desired.
+  i0 = where(data.asic eq 0)
+  i1 = where(data.asic eq 1)
+  i2 = where(data.asic eq 2)
+  i3 = where(data.asic eq 3)
+
+  ; UPDATE: this is now done in the read_data_struct function.
+;  if keyword_set(subtract_common) then begin
+;    asic0 = data[i0].data - data[i0].common_mode
+;    asic1 = data[i1].data - data[i1].common_mode
+;    asic2 = data[i2].data - data[i2].common_mode
+;    asic3 = data[i3].data - data[i3].common_mode
+;  endif else begin
+
+  a0 = intarr(1024, 64)
+  a1 = intarr(1024, 64)
+  a2 = intarr(1024, 64)
+  a3 = intarr(1024, 64)
+
+  ; debugging
+  print, n_elements(i0), n_elements(i1), n_elements(i2), n_elements(i3)
+
+  ; Make histograms of data for each channel.
+  for k = 0, 63 do begin
+
+    if i0[0] gt -1 then asic0 = data[i0].data[k] else asic0 = 0
+    if i1[0] gt -1 then asic1 = data[i1].data[k] else asic1 = 0
+    if i2[0] gt -1 then asic2 = data[i2].data[k] else asic2 = 0
+    if i3[0] gt -1 then asic3 = data[i3].data[k] else asic3 = 0
+
+    a0[*, k] = histogram([asic0], min = 0, max = 1023)
+    a1[*, k] = histogram([asic1], min = 0, max = 1023)
+    a2[*, k] = histogram([asic2], min = 0, max = 1023)
+    if n_elements(asic3) gt 1 then $
+      a3[*, k] = histogram([asic3], min = 0, max = 1023)
+
+  endfor
+
+  ; save data in current directory with chosen name, for easy recall.
+  save, a0, a1, a2, a3, file = savefile
+
+  window, xsize = 800, ysize = 800
+  x_axis = indgen(1024)
+ !p.multi = [0, 2, 2]
+  plot, x_axis, a0, xrange = [0, 500], yrange = [0, 1000], $
+    xtitle = 'ASIC 0 raw counts', psym = 10
+  plot, x_axis, a1, xrange = [0, 500], yrange = [0, 1000], $
+    xtitle = 'ASIC 1 raw counts', psym = 10
+  plot, x_axis, a2, xrange = [0, 500], yrange = [0, 1000], $
+    xtitle = 'ASIC 2 raw counts', psym = 10
+  plot, x_axis, a3, xrange = [0, 500], yrange = [0, 1000], $
+    xtitle = 'ASIC 3 raw counts', psym = 10
+
+  ; also store a copy of the save file in data storage directory
+  if n_elements(file) eq 1 then save_name = file else save_name = file[0]
+  if keyword_set(subtract_common) then save_name = save_name + '_sub'
+  save_name = save_name + '.sav'
+  save, a0, a1, a2, a3, file = save_name
+
+  return
+
+END
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+PRO MAKE_PEDESTAL, FILE, SUBTRACT = SUBTRACT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ped_data = read_data_struct( file, sub = subtract)
+  
+  ped_struct = {foxsi_pedestal, $
+                asic:0, $       ; asic 0-3 (0:1 p-side, 2:3 n-side
+                pedestal:fltarr(64), $ ; strip data
+                ped_sub: fltarr(64), $
+                noise:   fltarr(64) $
+                }
+
+  ; one pedestal structure for each ASIC, 4 total
+  ped_struct   = replicate(ped_struct, 4)
+
+  i0 = where(ped_data.asic eq 0)
+  i1 = where(ped_data.asic eq 1)
+  i2 = where(ped_data.asic eq 2)
+  i3 = where(ped_data.asic eq 3)
+
+  for j = 0, 63 do begin
+
+    ped_struct[0].pedestal[j] = average(ped_data[i0].data[j])
+    ped_struct[1].pedestal[j] = average(ped_data[i1].data[j])
+    ped_struct[2].pedestal[j] = average(ped_data[i2].data[j])
+    ped_struct[3].pedestal[j] = average(ped_data[i3].data[j])
+
+    ped_struct[0].ped_sub[j] = average(ped_data[i0].data[j] - ped_data[i0].common_mode)
+    ped_struct[1].ped_sub[j] = average(ped_data[i1].data[j] - ped_data[i1].common_mode)
+    ped_struct[2].ped_sub[j] = average(ped_data[i2].data[j] - ped_data[i2].common_mode)
+    ped_struct[3].ped_sub[j] = average(ped_data[i3].data[j] - ped_data[i3].common_mode)
+
+    ped_struct[0].noise[j] = stddev(ped_data[i0].data[j] - ped_data[i0].common_mode)
+    ped_struct[1].noise[j] = stddev(ped_data[i1].data[j] - ped_data[i1].common_mode)
+    ped_struct[2].noise[j] = stddev(ped_data[i2].data[j] - ped_data[i2].common_mode)
+    ped_struct[3].noise[j] = stddev(ped_data[i3].data[j] - ped_data[i3].common_mode)
+
+  endfor
+
+  save, ped_struct, file = 'pedestal.sav'
+
+END
+
+

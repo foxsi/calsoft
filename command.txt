@@ -1,0 +1,602 @@
+;-----------------------------------------------------;
+;  Lindsay's CAL scripts, including CdTe updates	  ;
+;-----------------------------------------------------;
+
+add_path,'../calsoft_linz/'
+add_path,'../util/'
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Data processing / quicklook;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; USB interface
+dir = '../20120825/'
+f='data_20120825_210804.txt'
+data = read_data_struct_cal(dir+f)
+str = 'struct_'+f
+save,data,file=str
+h2=makehist(str,/cmn_med)
+draw_4hist,h2,xrange=[0,100],yr=[0,2]
+
+h1=makehist('struct_data_20120819_010034_det110_am1.txt',/cmn_med)
+draw_4hist,h1,xrange=[0,500],yr=[0,5]
+
+;; formatter interface
+dir = '~/FOXSI-calib/20141109/'
+f = 'data_141109_204241.dat'
+detnum=2
+data=formatter_packet(dir+f,detnum)
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+save,data,file=str
+h=makehist(str,/sub)
+draw_4hist,h,xrange=[0,150],yr=[0,2]
+
+badch=intarr(4,64)
+badch[2,63]=1
+badch[3, 0]=1
+image=image_quick(str, badch=badch)
+draw_image,-image
+loadct,0
+
+
+; for the CdTe.
+dir = '~/FOXSI-calib/20141109/'
+f = 'data_141109_204241.dat'
+detnum=2
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+image=image_quick_cdte(str, badch=badch)
+draw_image, -image, nmin=-0.125*max(image)
+loadct,0
+
+; look at it in payload coordinates.
+add_path,'../calsoft_linz/'
+add_path,'../util/'	   
+.compile cal_data_to_level0
+.compile foxsi_level0_to_level1
+.compile foxsi_level1_to_level2
+.compile get_payload_coords
+dir = '~/FOXSI-calib/20141109/'
+f = 'data_141109_204127.dat'	; unperturbed source location
+f = 'data_141109_205747.dat'	; source displaced to solar north
+f = 'data_141109_211620.dat'	; source displaced to solar west
+detnum=2
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data_lvl0_d2 = formatter_data_to_level0( f, det=2 )
+save, data_lvl0_d2, file = 'level0_'+f+'.sav'
+data_lvl1_D2 = foxsi_level0_to_level1_cdte( 'level0_'+f+'.sav', det=2, /ground )
+save, data_lvl1_D2, file = 'level1_'+f+'.sav'
+cal2 = '../calsoft_linz/peaks_det108.sav'
+data_lvl2_D2 = foxsi_level1_to_level2( 'level0_'+f+'.sav', 'level1_'+f+'.sav', det=2, $
+	calib=cal2, /ground )
+save, data_lvl2_D2, file = 'level2_'+f+'.sav'
+
+im = foxsi_image_det( data_lvl2_d2, trange=[-1,1]-long(64500.) )
+map  = rot_map( make_map( im, dx=7.78, dy=7.78 ), rot2 )
+plot_map, map, /log
+
+	rot0 = 82.5
+	rot1 = 75.
+	rot2 = -67.5 - 90
+	rot3 = -75.
+	rot4 = 97.5
+	rot5 = 90.
+	rot6 = -60.
+	
+	
+
+
+; process all the X-ray alignment data.
+dir = '~/FOXSI-calib/20141109/'
+
+detnum=0
+f = 'data_141109_195208.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_195638.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=1
+f = 'data_141109_182413.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_182536.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_182838.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_183437.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=2
+f = 'data_141109_204127.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_204241.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_204320.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=3
+f = 'data_141109_203311.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_203442.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=4
+f = 'data_141109_202422.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_202557.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=5
+f = 'data_141109_201310.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_201558.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_201850.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+detnum=6
+f = 'data_141109_172229.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+f = 'data_141109_172816.dat'
+str = 'struct_D'+strtrim(detnum,2)+'_'+f
+data=formatter_packet(dir+f,detnum)
+save,data,file=str
+
+
+badch=intarr(4,64)
+badch[2,63]=1
+badch[3, 0]=1
+
+det = 2
+str = file_search('*D'+strtrim(det,2)+'*')
+.r
+for i=0, n_elements(str)-1 do begin
+	if i eq 0 then image = image_quick(str[i], badch=badch) $
+		else image = image + image_quick(str[i], badch=badch)
+endfor
+end
+draw_image,-image, charsi=1.5, charth=2, nmax=-50, $
+	title = 'FOXSI-2 X-ray alignment  2014 Nov 9  Detector '+strtrim(det,2)
+loadct,0
+
+
+
+
+
+dir = '../20120827/'
+f=file_search(dir+'data*det3_*am*')
+print,f
+data = read_data_struct_cal_c(dir+f[0])
+str = 'struct_'+strmid(f[0],strpos(f[0],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[1])
+str = 'struct_'+strmid(f[1],strpos(f[1],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[2])
+str = 'struct_'+strmid(f[2],strpos(f[2],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[3])
+str = 'struct_'+strmid(f[3],strpos(f[3],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[4])
+str = 'struct_'+strmid(f[4],strpos(f[4],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[5])
+str = 'struct_'+strmid(f[5],strpos(f[5],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[6])
+str = 'struct_'+strmid(f[6],strpos(f[6],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[7])
+str = 'struct_'+strmid(f[7],strpos(f[7],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[8])
+str = 'struct_'+strmid(f[8],strpos(f[8],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[9])
+str = 'struct_'+strmid(f[9],strpos(f[9],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[10])
+str = 'struct_'+strmid(f[10],strpos(f[10],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[11])
+str = 'struct_'+strmid(f[11],strpos(f[11],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[12])
+str = 'struct_'+strmid(f[12],strpos(f[12],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[13])
+str = 'struct_'+strmid(f[13],strpos(f[13],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[14])
+str = 'struct_'+strmid(f[14],strpos(f[14],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[15])
+str = 'struct_'+strmid(f[15],strpos(f[15],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[16])
+str = 'struct_'+strmid(f[16],strpos(f[16],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[17])
+str = 'struct_'+strmid(f[17],strpos(f[17],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[18])
+str = 'struct_'+strmid(f[18],strpos(f[18],'/',/reverse_search)+1)
+save,data,file=str
+data = read_data_struct_cal_c(dir+f[19])
+str = 'struct_'+strmid(f[19],strpos(f[19],'/',/reverse_search)+1)
+save,data,file=str
+
+
+;;;;;;;;;;
+; Images ;
+;;;;;;;;;;
+
+badch=intarr(4,64)
+badch[2,63]=1
+badch[3, 0]=1
+image=image_quick(str, badch=badch)
+draw_image,-image
+loadct,0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;    make response functions and calibrated spectra
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+add_path,'../calsoft_linz/'
+
+f=file_search('struct*det3_*am*')
+print,f
+h_am1=makehist(f[0], /cmn_med)
+h_am2=makehist(f[1], /cmn_med)
+h_am3=makehist(f[2], /cmn_med)
+h_am4=makehist(f[3], /cmn_med)
+h_am5=makehist(f[4], /cmn_med)
+h_am6=makehist(f[5], /cmn_med)
+h_am7=makehist(f[6], /cmn_med)
+h_am = add4hist(h_am1,h_am2,h_am3,h_am4)
+h_am = addhist(h_am, h_am5)
+h_am = addhist(h_am, h_am6)
+h_am = addhist(h_am, h_am7)
+draw_4hist, h_am, xrange=[0,1000], yr=[0,30]
+
+f=file_search('struct*det3_*ba*')
+print,f
+h_ba1=makehist(f[0], /cmn_med)
+h_ba2=makehist(f[1], /cmn_med)
+h_ba3=makehist(f[2], /cmn_med)
+h_ba4=makehist(f[3], /cmn_med)
+h_ba=addhist(h_ba1, h_ba2)
+h_ba=addhist(h_ba, h_ba3)
+h_ba=addhist(h_ba, h_ba4)
+draw_4hist, h_ba, xrange=[0,1000], yr=[0,30]
+
+f=file_search('struct*det3_*fe*')
+print,f
+h_fe1=makehist(f[0],/cmn_median)
+h_fe2=makehist(f[1],/cmn_median)
+h_fe3=makehist(f[2],/cmn_median)
+h_fe=addhist(h_fe1, h_fe2)
+h_fe=addhist(h_fe, h_fe3)
+draw_4hist, h_fe, xrange=[0,100], yr=[0,30]
+
+.compile peaks_fe_4am_2ba
+peaks_fe_4am_2ba, histfe=h_fe, histam=h_am, histba=h_ba
+restore,'peaks.sav'
+draw_64spline,peaks,0
+
+add_path,'../calsoft_linz/'
+badch=intarr(4,64)
+badch[2,63]=1
+badch[3, 0]=1
+
+f=file_search('struct*det3_*am*')
+print,f
+spec=calspec(f[0],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[0],strpos(f[0],'_'))
+spec=calspec(f[1],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[1],strpos(f[1],'_'))
+spec=calspec(f[2],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[2],strpos(f[2],'_'))
+spec=calspec(f[3],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[3],strpos(f[3],'_'))
+spec=calspec(f[4],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[4],strpos(f[4],'_'))
+spec=calspec(f[5],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[5],strpos(f[5],'_'))
+
+amf=file_search('spec*am*')
+print,amf
+restore,amf[0]
+spec_am=spec
+restore,amf[1]
+spec_am=addspec(spec_am, spec)
+restore,amf[2]
+spec_am=addspec(spec_am, spec)
+restore,amf[3]
+spec_am=addspec(spec_am, spec)
+restore,amf[4]
+spec_am=addspec(spec_am, spec)
+restore,amf[5]
+spec_am=addspec(spec_am, spec)
+restore,amf[6]
+spec_am=addspec(spec_am, spec)
+spec=spec_am
+save,spec,file='spec_data_det3_am.dat'
+
+f=file_search('struct*det3_*ba*')
+spec=calspec(f[0],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[0],strpos(f[0],'_'))
+spec=calspec(f[1],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[1],strpos(f[1],'_'))
+spec=calspec(f[2],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[2],strpos(f[2],'_'))
+spec=calspec(f[3],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[3],strpos(f[3],'_'))
+
+baf=file_search('spec*ba*')
+print,baf
+restore,baf[0]
+spec_ba=spec
+restore,baf[1]
+spec_ba=addspec(spec_ba, spec)
+restore,baf[2]
+spec_ba=addspec(spec_ba, spec)
+restore,baf[3]
+spec_ba=addspec(spec_ba, spec)
+restore,baf[4]
+spec_ba=addspec(spec_ba, spec)
+spec = spec_ba
+save,spec,file='spec_data_det3_ba.dat'
+
+f=file_search('struct*det3_*fe*')
+spec=calspec(f[0],/cmn_median,badch=badch,thrn=4)
+save,spec,file='spec' + strmid(f[0],strpos(f[0],'_'))
+
+fef=file_search('spec*fe*')
+print,fef
+restore, fef[0]
+spec_fe = spec
+restore, fef[1]
+spec_fe = addspec(spec_fe, spec)
+restore, fef[2]
+spec_fe = addspec(spec_fe, spec)
+spec = spec_fe
+save,spec,file='spec_data_det3_fe.dat'
+
+add_path,'../calsoft_linz/'
+add_path,'../util/'	   
+
+restore,'spec_data_det3_am.dat'
+draw_4spec, spec, xr=[0,80], ymin=0;, yr=[0,30000]
+print, calcfwhm(spec, asic=2, ch=64, range=[13,15], rebin=1)
+print, calcfwhm(spec, asic=3, ch=64, range=[13,15], rebin=1)
+
+popen, xsize=8, ysize=6
+draw_4spec, spec, xr=[0,80], ystyle=1, ymin=0.
+pclose
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;    count rate scan and efficiency estimation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+add_path,'../calsoft_linz/'
+add_path,'../util/'
+badch=intarr(4,64)
+badch[2,63]=1
+badch[3, 0]=1
+
+; ASIC 2
+vth=[5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.]
+files = file_search('./struct*det3_asic2_vth*')
+efficiency, vth=vth, files=files, badch=badch, savefile='efficiency_det3_asic2.sav'
+
+; ASIC 3
+vth=[6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.]
+files = file_search('./struct*det3_asic3_vth*')
+efficiency, vth=vth, files=files, badch=badch, savefile='efficiency_det3_asic3.sav'
+
+popen, xsize=8, ysize=4
+restore, 'efficiency_det3_asic2.sav'
+plot, energy_kev, efficiency, xtitle='Energy [keV]', ytitle='Efficiency', charsize=1.2
+restore, 'efficiency_det3_asic3.sav'
+oplot, energy_kev, efficiency, line=1
+legend, ['ASIC 2','ASIC 3'], line=[0,1], charsize=1.2
+pclose
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+restore,'/home/ishikawa/foxsi/det16/spec_data_20111113_fe.dat'
+
+
+print,calcfwhm(spec,asic=0,ch=64,range=[12,17],rebin=4)
+print,calcfwhm(spec,asic=1,ch=64,range=[13,15],rebin=4)
+print,calcfwhm(spec,asic=2,ch=64,range=[13.5,14.3],rebin=1)
+print,calcfwhm(spec,asic=3,ch=64,range=[13,15],rebin=1)
+
+print,calcfwhm(spec,asic=3,ch=64,range=[17.4,18.5],rebin=1)
+
+print,calcfwhm(spec,asic=3,ch=64,range=[4,7.5],rebin=1)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;      image
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+add_path,'../calsoft/'
+badch=intarr(4,64)
+badch[2,62]=1
+badch[2,63]=1
+badch[3, 0]=1
+badch[3, 1]=1
+
+img1=image('struct_data_20120104_204439.dat',/cmn_median,badch=badch,thrp=4,erange=[10,20])
+img2=image('struct_data_20120104_182223.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img3=image('struct_data_20120104_182002.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img4=image('struct_data_20120104_180336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img5=image('struct_data_20120104_175005.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img6=image('struct_data_20120104_174336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img7=image('struct_data_20120104_173958.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+image=img1+img2+img3
+save,image,file='image_data_20120103_am.dat'
+draw_image,image
+
+
+
+
+
+
+restore,'image_data_20111209_194424_am_image_roomtemp.dat'
+image1=img
+restore,'image_data_20111209_195921_am_image_roomtemp_2.dat'
+image2=img
+image=image1+image2
+draw_image,image
+
+
+
+restore,'image_20111118_007.dat'
+image7=img
+restore,'image_20111118_008.dat'
+image8=img
+restore,'image_20111118_009.dat'
+image9=img
+image=image7+image8+image9
+draw_image,image
+
+
+
+
+restore,'image_20111117_003.dat'
+image3=img
+image=image1+image2+image3
+draw_image,image
+
+
+restore,'image_20111116_002_low.dat'
+image1=img
+restore,'image_20111116_003_low.dat'
+image2=img
+image=image1+image2
+draw_image,image<35
+
+
+
+
+
+img=image('20111013_003_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,100])
+save,img,file='image_20111013_003_fe.dat'
+draw_image,img
+
+
+img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+save,img,file='image_20111013_004_am_4_50kev.dat'
+draw_image,img
+
+img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[50,100])
+save,img,file='image_20111013_004_am_50_100kev.dat'
+draw_image,img
+
+
+img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,14.5])
+save,img,file='image_20111013_004_am_4_14_5kev.dat'
+draw_image,img
+
+img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[14.5,50])
+save,img,file='image_20111013_004_am_14_5_50kev.dat'
+draw_image,img
+
+
+
+
+
+;;;;;;;;;;;;;
+mistake probablity
+;;;;;;;;;;;;;
+wasteprob=1-gaussint(5-findgen(11)*0.5)
+missprob=[0.236422,0.235775,0.233993,0.229588,0.219751,0.199739,0.163160,0.110493,0.0594266,0.0258672,0.00946134]
+
+missprob_abs=(1-wasteprob)*missprob
+
+plot,findgen(11)*0.5,wasteprob
+oplot,findgen(11)*0.5,missprob_abs
+oplot,findgen(11)*0.5,missprob_abs+wasteprob,linestyle=2
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Calculting FWHM for Gaussian pedestals ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+det1=makehist('struct_data_20120130_130955.dat')
+det1cms=makehist('struct_data_20120130_130955.dat',/cmn_median)
+
+fwhm,hist=det1
+fwhm,hist=det1cms
+
+hist=det1
+asic=0
+xx0=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 0)
+yy0=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 1)
+result=gaussfit(xx0,yy0,coeff0)
+fwhm0=2.35*coeff0[2]
+asic=1
+xx1=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 0)
+yy1=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 1)
+result=gaussfit(xx1,yy1,coeff1)
+fwhm1=2.35*coeff1[2]
+asic=2
+xx2=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 0)
+yy2=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 1)
+result=gaussfit(xx2,yy2,coeff2)
+fwhm2=2.35*coeff2[2]
+asic=3
+xx3=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 0)
+yy3=(rebin(hist, 1124, 1, 4, 2))(*, 0, asic, 1)
+result=gaussfit(xx3,yy3,coeff3)
+fwhm3=2.35*coeff3[2]
+print,fwhm0,fwhm1,fwhm2,fwhm3
+
+popen,xsize=6,ysize=5
+draw_4hist,h1,xrange=[0,100],yr=[0,50],/nowindow
+pclose
+
+
+
+
+
+
