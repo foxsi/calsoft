@@ -44,7 +44,6 @@ FUNCTION CALSPEC, FILE, PEAKSFILE = PEAKSFILE, THRP = THRP, THRN = THRN , BINWID
         endfor
     endfor
 
-;n_evts=100
     if keyword_set(nmax) then n_evts = nmax
     ngood=long(0)
 
@@ -52,6 +51,8 @@ FUNCTION CALSPEC, FILE, PEAKSFILE = PEAKSFILE, THRP = THRP, THRN = THRN , BINWID
     for evt = long(0), n_evts-1 do begin
         
         if (evt mod 1000) eq 0 then print, 'Event  ', evt, ' / ', n_evts
+		if max( data[evt].data ) eq 0 then continue
+   
         hitchnump=0
         hitchnumn=0
         
@@ -79,9 +80,10 @@ FUNCTION CALSPEC, FILE, PEAKSFILE = PEAKSFILE, THRP = THRP, THRN = THRN , BINWID
                 endfor
             endfor
 
-            ;print, hitchnump, hitchnumn
+            ;;;print, '# hit ', hitchnumn, hitchnump
 
-            if hitchnump eq 1 and hitchnumn eq 1 then begin
+;;            if hitchnump eq 1 and hitchnumn eq 1 then begin
+            if hitchnump eq 1 then begin
                 ngood += 1
                 edepldp=spline(peaks[*,hitchp,hitasicp,0],peaks[*,hitchp,hitasicp,1],$
                                data[evt].data[hitasicp,hitchp]-cmn[evt,hitasicp]-0.5)
@@ -93,15 +95,15 @@ FUNCTION CALSPEC, FILE, PEAKSFILE = PEAKSFILE, THRP = THRP, THRN = THRN , BINWID
                     spec(addadc[l],64,hitasicp,1)+=1/100./(edepudp-edepldp)
                 endfor
 
-                edepldn=spline(peaks[*,hitchn,hitasicn,0],peaks[*,hitchn,hitasicn,1],$
-                               data[evt].data[hitasicn,hitchn]-cmn[evt,hitasicn]-0.5)
-                edepudn=spline(peaks[*,hitchn,hitasicn,0],peaks[*,hitchn,hitasicn,1],$
-                               data[evt].data[hitasicn,hitchn]-cmn[evt,hitasicn]+0.5)
-                addadc=(((findgen(100)+0.5)/100.*(edepudn-edepldn)+edepldn)/binwidth)<(nbin-1)>0
-                for l=0, 99 do begin
-                    spec(addadc[l],hitchn,hitasicn,1)+=1/100./(edepudn-edepldn)
-                    spec(addadc[l],64,hitasicn,1)+=1/100./(edepudn-edepldn)
-                endfor
+;                edepldn=spline(peaks[*,hitchn,hitasicn,0],peaks[*,hitchn,hitasicn,1],$
+;                               data[evt].data[hitasicn,hitchn]-cmn[evt,hitasicn]-0.5)
+;                edepudn=spline(peaks[*,hitchn,hitasicn,0],peaks[*,hitchn,hitasicn,1],$
+;                               data[evt].data[hitasicn,hitchn]-cmn[evt,hitasicn]+0.5)
+;                addadc=(((findgen(100)+0.5)/100.*(edepudn-edepldn)+edepldn)/binwidth)<(nbin-1)>0
+;                for l=0, 99 do begin
+;                    spec(addadc[l],hitchn,hitasicn,1)+=1/100./(edepudn-edepldn)
+;                    spec(addadc[l],64,hitasicn,1)+=1/100./(edepudn-edepldn)
+;                endfor
 
  
             endif
