@@ -1,6 +1,8 @@
 ;-----------------------------------------------------;
 ;  Lindsay's CAL scripts, including CdTe updates	  ;
 ;-----------------------------------------------------;
+; I replaced any call to the function image.pro by a call to the function foxsi_image.pro 
+; since I am changing this function name in calsoft (because image.pro is already a default IDL function that I use elsewhere in calsoft) - Sophie
 
 add_path,'../calsoft_linz/'
 add_path,'../util/'
@@ -465,13 +467,13 @@ badch[2,63]=1
 badch[3, 0]=1
 badch[3, 1]=1
 
-img1=image('struct_data_20120104_204439.dat',/cmn_median,badch=badch,thrp=4,erange=[10,20])
-img2=image('struct_data_20120104_182223.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
-img3=image('struct_data_20120104_182002.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
-img4=image('struct_data_20120104_180336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
-img5=image('struct_data_20120104_175005.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
-img6=image('struct_data_20120104_174336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
-img7=image('struct_data_20120104_173958.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img1=foxsi_image('struct_data_20120104_204439.dat',/cmn_median,badch=badch,thrp=4,erange=[10,20])
+img2=foxsi_image('struct_data_20120104_182223.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img3=foxsi_image('struct_data_20120104_182002.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img4=foxsi_image('struct_data_20120104_180336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img5=foxsi_image('struct_data_20120104_175005.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img6=foxsi_image('struct_data_20120104_174336.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img7=foxsi_image('struct_data_20120104_173958.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
 image=img1+img2+img3
 save,image,file='image_data_20120103_am.dat'
 draw_image,image
@@ -519,25 +521,25 @@ draw_image,image<35
 
 
 
-img=image('20111013_003_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,100])
+img=foxsi_image('20111013_003_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,100])
 save,img,file='image_20111013_003_fe.dat'
 draw_image,img
 
 
-img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
+img=foxsi_image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,50])
 save,img,file='image_20111013_004_am_4_50kev.dat'
 draw_image,img
 
-img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[50,100])
+img=foxsi_image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[50,100])
 save,img,file='image_20111013_004_am_50_100kev.dat'
 draw_image,img
 
 
-img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,14.5])
+img=foxsi_image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[4,14.5])
 save,img,file='image_20111013_004_am_4_14_5kev.dat'
 draw_image,img
 
-img=image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[14.5,50])
+img=foxsi_image('20111013_004_newstruct.dat',/cmn_median,badch=badch,thrp=4,erange=[14.5,50])
 save,img,file='image_20111013_004_am_14_5_50kev.dat'
 draw_image,img
 
