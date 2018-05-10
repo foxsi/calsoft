@@ -3,7 +3,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 FUNCTION MAKEHIST, FILE, $
               SUBTRACT_COMMON = SUBTRACT_COMMON, CMN_AVERAGE = CMN_AVERAGE, $
-              CMN_MEDIAN = CMN_MEDIAN, STOP = STOP
+              CMN_MEDIAN = CMN_MEDIAN, STOP = STOP, gooddata=gooddata, _extra=extra
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,18 +49,18 @@ FUNCTION MAKEHIST, FILE, $
   ; save data in current directory with chosen name, for easy recall.
   ;save, a0, a1, a2, a3, file = savefile
 
-  window, xsize = 800, ysize = 800
+  window, xsize = 1800, ysize = 1800
   ;x_axis = indgen(1124)-100
  !p.multi = [0, 2, 2]
   mm = max((rebin(hist, 1124, 1, 4, 2))(*,0,*,1))
   plot, (rebin(hist, 1124, 1, 4, 2))(*, 0, 0, 0), (rebin(hist, 1124, 1, 4, 2))(*, 0, 0, 1), xrange = [-100, 800], yrange = [0.01, mm], $
-    xtitle = 'ASIC 0 raw counts', psym = 10,/ylog
+    xtitle = 'ASIC 0 raw counts', psym = 10,/ylog, _extra=extra
   plot, (rebin(hist, 1124, 1, 4, 2))(*, 0, 1, 0), (rebin(hist, 1124, 1, 4, 2))(*, 0, 1, 1), xrange = [-100, 800], yrange = [0.01, mm], $
-    xtitle = 'ASIC 1 raw counts', psym = 10,/ylog
+    xtitle = 'ASIC 1 raw counts', psym = 10,/ylog, _extra=extra
   plot, (rebin(hist, 1124, 1, 4, 2))(*, 0, 2, 0), (rebin(hist, 1124, 1, 4, 2))(*, 0, 2, 1), xrange = [-100, 800], yrange = [0.01, mm], $
-    xtitle = 'ASIC 2 raw counts', psym = 10,/ylog
+    xtitle = 'ASIC 2 raw counts', psym = 10,/ylog, _extra=extra
   plot, (rebin(hist, 1124, 1, 4, 2))(*, 0, 3, 0), (rebin(hist, 1124, 1, 4, 2))(*, 0, 3, 1), xrange = [-100, 800], yrange = [0.01, mm], $
-    xtitle = 'ASIC 3 raw counts', psym = 10,/ylog
+    xtitle = 'ASIC 3 raw counts', psym = 10,/ylog, _extra=extra
 
                                 ; also store a copy of the save file in data storage directory
 ;  if n_elements(file) eq 1 then save_name = file else save_name = file[0]
