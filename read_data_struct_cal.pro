@@ -21,7 +21,7 @@ FUNCTION READ_DATA_STRUCT_CAL, FILE, SUBTRACT = SUBTRACT, STOP = STOP
      return, 0
   endif
 
-  restore, 'C:\Users\SMusset\Documents\GitHub\calsoft\template_cal.sav'
+  restore, 'template_cal.sav'
 
   ; prepare the type of data structure you want
   data_struct = {foxsi_data, $
