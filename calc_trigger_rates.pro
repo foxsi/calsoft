@@ -11,9 +11,13 @@
 ;   
 ; INPUT
 ;   file: string with the name of the formatter file
+;
+; OUTPUT
+;   An array of 7 double numbers, containing the trigger rate in cts/sec for each detector.
 ;   
 ; KEYWORD
 ;   loud, set to 1 for the trigger rates to be printed, default is 1
+;   quiet, set to disable result printing. When set, loud is ignored.
 ; 
 ; CALLS
 ;   formatter_packet
@@ -27,10 +31,11 @@
 ;   2018/10/12 - SMusset (UMN) - added keyword loud, completed header and added to calsoft
 ;-
 
-function calc_trigger_rates, file, loud=loud
+function calc_trigger_rates, file, loud=loud, quiet=quiet
 
   ; initialization
   DEFAULT, loud, 1
+  IF keyword_set(quiet) THEN loud=0
   trigger_rate=dblarr(7)
 
   ; loop over detectors
