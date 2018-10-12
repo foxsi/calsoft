@@ -13,7 +13,7 @@
 ;   file: string with the name of the formatter file
 ;
 ; OUTPUT
-;   An array of 7 double numbers, containing the trigger rate in cts/sec for each detector.
+;   An array of 7 double numbers, containing the nonzero event rate rate in units of triggers/sec for each detector.
 ;   
 ; KEYWORD
 ;   loud, set to 1 for the trigger rates to be printed, default is 1
